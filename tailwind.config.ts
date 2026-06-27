@@ -8,7 +8,6 @@ const config: Config = {
         ink: "#102a43",
         leaf: "#2aa876",
         mint: "#e8f8f1",
-        wheat: "#eef8ff",
         skySoft: "#e7f3ff",
         blueSoft: "#dff1ff"
       }

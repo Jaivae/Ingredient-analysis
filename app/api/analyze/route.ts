@@ -17,6 +17,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "未配置 DEEPSEEK_API_KEY，请配置后重启服务" }, { status: 500 });
     }
 
+    // 模型输出先经过轻量规范化，再返回给前端，保证页面结构稳定。
     const result = normalizeAnalysisResult(await analyzeWithDeepSeek(ingredientText, apiKey), ingredientText);
     logDebugBlock("3. DeepSeek 配料表分析结果", result);
 
@@ -62,7 +63,6 @@ async function analyzeWithDeepSeek(ingredientText: string, apiKey: string): Prom
     throw new Error("LLM request failed");
   }
 
-
   const data = await response.json();
   const content = data.choices?.[0]?.message?.content;
   if (!content || typeof content !== "string") {
@@ -87,6 +87,7 @@ const ingredientGroupNames: IngredientGroupName[] = [
 
 // 对模型输出做轻量规范化：限制条数、补齐分类，并保留用户确认后的原始输入。
 function normalizeAnalysisResult(result: AnalysisResult, inputText: string): AnalysisResult {
+  // 使用 Map 补齐固定分类，比在前端判断各种缺失情况更简单。
   const existingGroups = new Map(result.ingredientGroups?.map((group) => [group.groupName, group.items]) ?? []);
 
   return {

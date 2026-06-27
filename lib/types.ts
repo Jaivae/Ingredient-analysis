@@ -83,5 +83,5 @@ export interface OcrResult {
   rawText: string;
   cleanedText: string;
   possibleIngredientText: string;
-  confidenceNote: string; 
+  confidenceNote: string;
 }

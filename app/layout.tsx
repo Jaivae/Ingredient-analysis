@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: "基于 OCR 与大语言模型的加工食品配料表解析 Web 原型系统"
 };
 
+// App Router 的根布局，所有页面内容都会渲染到 body 内。
 export default function RootLayout({
   children
 }: Readonly<{

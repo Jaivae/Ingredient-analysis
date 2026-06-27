@@ -3,9 +3,10 @@ import { buildIngredientExtractionPrompt } from "@/lib/prompts";
 import type { OcrResult } from "@/lib/types";
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;
-const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/bmp","image/tif"]);
+const SUPPORTED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/bmp", "image/tif", "image/tiff"]);
 const PADDLE_OCR_JOB_URL = "https://paddleocr.aistudio-app.com/api/v2/ocr/jobs";
 
+// OCR 接口只负责接收图片、调用 OCR，并返回可供用户确认的配料表文本。
 export async function POST(request: Request) {
   try {
     const formData = await request.formData();
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
 
     if (!SUPPORTED_IMAGE_TYPES.has(file.type)) {
       return NextResponse.json(
-        { message: "暂不支持该类型图片，建议转换为 JPG、PNG后再上传" },
+        { message: "暂不支持该类型图片，建议转换为 JPG、PNG 后再上传" },
         { status: 415 }
       );
     }
@@ -41,8 +42,9 @@ export async function POST(request: Request) {
 
 // PaddleOCR 是异步任务接口：先提交文件获得 jobId，再轮询任务状态，最后下载 JSONL 结果。
 async function runPaddleOcr(file: File, apiKey: string): Promise<OcrResult> {
+  // 开启方向分类和版面矫正，减少手机拍照角度带来的识别误差。
   const optionalPayload = {
-    useDocOrientationClassify: true,  
+    useDocOrientationClassify: true,
     useDocUnwarping: true,
     useChartRecognition: false
   };
@@ -80,6 +82,7 @@ async function runPaddleOcr(file: File, apiKey: string): Promise<OcrResult> {
   const rawText = extractTextFromPaddleJsonl(await jsonlResponse.text());
   logDebugBlock("1. PaddleOCR 原始识别文本", rawText);
 
+  // OCR 原文可能包含营养成分、厂家、保质期等信息，这里再用 LLM 抽取配料表。
   const ingredientText = await extractIngredientTextWithDeepSeek(rawText);
   logDebugBlock("2. DeepSeek 从 OCR 原文中提取的配料表文本", ingredientText || "未提取到明确配料表文本");
 
@@ -138,6 +141,7 @@ function logDebugBlock(title: string, content: unknown) {
   console.log("========== END ==========\n");
 }
 
+// DeepSeek 只用于从 OCR 原文中抽取配料表，不做健康分析。
 async function extractIngredientTextWithDeepSeek(ocrText: string) {
   const apiKey = process.env.DEEPSEEK_API_KEY;
   if (!apiKey) {

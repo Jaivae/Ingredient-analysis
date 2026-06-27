@@ -6,6 +6,7 @@
   color-scheme: light;
 }
 
+/* 全局页面底色和基础文字颜色，具体组件样式主要由 Tailwind 类控制。 */
 body {
   margin: 0;
   background: #eef8ff;
